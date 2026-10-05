@@ -5,7 +5,10 @@
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- 스테이션 링크 ---------- */
-  var stationHref = location.protocol === "file:" ? "../공명스테이션_예시.html" : "/station.html";
+  var stationHref =
+    location.protocol === "file:"
+      ? "../공명스테이션_예시.html"
+      : "station.html"; /* GitHub Pages / 로컬: 소개와 같은 폴더 */
   document.querySelectorAll("[data-station]").forEach(function (a) {
     a.setAttribute("href", stationHref);
   });

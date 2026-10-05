@@ -23,14 +23,11 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         raw = unquote(parsed.path)
 
-        # canonical intro URL
+        # root = intro (GitHub Pages와 동일). /intro/ 도 유지.
         if raw in ("/", "/index.html"):
-            self.send_response(302)
-            self.send_header("Location", "/intro/")
-            self.end_headers()
-            return
+            return self._send_file(INTRO / "index.html", head)
 
-        if raw in ("/station", "/station.html"):
+        if raw in ("/station", "/station.html", "/intro/station", "/intro/station.html"):
             return self._send_file(ROOT / "공명스테이션_예시.html", head)
 
         if raw.startswith("/intro"):
