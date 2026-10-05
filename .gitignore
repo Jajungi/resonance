@@ -1,0 +1,26 @@
+﻿# dependencies / build
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+client/dist/
+
+# secrets & local
+.env
+**/.env
+*.log
+logs/
+.DS_Store
+Thumbs.db
+
+# drafts / local-only
+**/_draft_*.html
+.cursor/
+*.local
+
+# OS / editor
+.vscode/
+.idea/
+
+04_발표/html-ppt-skill/
+

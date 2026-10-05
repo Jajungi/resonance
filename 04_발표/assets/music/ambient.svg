@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="24" fill="#f4f4f4"/>
+  <circle cx="200" cy="280" r="50" stroke="#2c5f6e" stroke-width="8"/>
+  <circle cx="200" cy="280" r="12" fill="#2c5f6e"/>
+  <path d="M250 280V140l120-30v140" stroke="#2c5f6e" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="370" cy="250" r="40" stroke="#2c5f6e" stroke-width="8"/>
+  <circle cx="370" cy="250" r="10" fill="#2c5f6e"/>
+  <text x="256" y="420" text-anchor="middle" fill="#5a5a5a" font-size="24" font-family="sans-serif">X@ LE · Ambient</text>
+</svg>

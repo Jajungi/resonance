@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <rect width="800" height="500" fill="#f4f4f4"/>
+  <rect x="40" y="60" width="720" height="380" rx="8" fill="#e8ecee" stroke="#c5ced2"/>
+  <text x="80" y="100" fill="#8a969b" font-size="22" font-family="sans-serif">Community Center Lobby · 2035</text>
+  <rect x="280" y="120" width="240" height="280" rx="14" fill="#ffffff" stroke="#2c5f6e" stroke-width="3"/>
+  <rect x="300" y="145" width="200" height="140" rx="8" fill="#0d1a1c"/>
+  <circle cx="400" cy="215" r="36" stroke="#6ed4cc" stroke-width="3" opacity="0.8"/>
+  <circle cx="400" cy="215" r="16" fill="#6ed4cc" opacity="0.35"/>
+  <path d="M355 350h90v14h-90z" fill="#1a1a1a"/>
+  <path d="M370 350v-40h60v40" stroke="#1a1a1a" stroke-width="3"/>
+  <text x="400" y="445" text-anchor="middle" fill="#2c5f6e" font-size="20" font-family="sans-serif">õ… ¤LtX · 1x €¤</text>
+</svg>
