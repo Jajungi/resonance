@@ -557,7 +557,35 @@ input[type="range"]::-moz-range-thumb {
 .glossary dt { font-weight: 650; font-size: .95rem; }
 .glossary dd { margin: .15rem 0 0; font-size: .94rem; color: var(--ink-2); }
 
-.doc-main { max-width: 42rem; }
+/* 자료 본문: TOC 그리드 없이 가운데 단 */
+body.doc-page {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 120, 48, 0.07), transparent 55%),
+    var(--bg);
+}
+.doc-shell {
+  width: 100%;
+  max-width: var(--col);
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  box-sizing: border-box;
+}
+.doc-main.page,
+.doc-main {
+  max-width: 42rem;
+  margin: 0 auto;
+  width: 100%;
+  padding: 2.4rem 0 4.5rem;
+  box-sizing: border-box;
+}
+.doc-main > h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.55rem, 3.2vw, 2rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  margin: 0.35rem 0 0.5rem;
+}
 .doc-body { margin-top: 1.5rem; line-height: 1.75; }
 .doc-body h1, .doc-body h2, .doc-body h3 {
   font-family: "Noto Serif KR", serif;
@@ -565,6 +593,8 @@ input[type="range"]::-moz-range-thumb {
   letter-spacing: -0.02em;
   margin: 2rem 0 0.75rem;
 }
+.doc-body h1 { font-size: 1.35rem; }
+.doc-body h2 { font-size: 1.2rem; }
 .doc-body p { margin: 0 0 1rem; }
 .doc-body ul, .doc-body ol { margin: 0 0 1rem 1.25rem; }
 .doc-body li { margin: 0.25rem 0; }
@@ -579,6 +609,26 @@ input[type="range"]::-moz-range-thumb {
   background: color-mix(in srgb, var(--ink) 4%, transparent);
   border-radius: 0.4rem;
   font-size: 0.9rem;
+}
+.doc-body .doc-quote,
+.doc-body blockquote {
+  margin: 1rem 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--amber);
+  background: color-mix(in srgb, var(--amber) 8%, transparent);
+  color: var(--ink);
+}
+.doc-main .page-next {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 719px) {
+  .doc-shell { padding: 0 0.95rem; }
+  .doc-main { padding-top: 1.6rem; }
 }
 
 .page-next {
