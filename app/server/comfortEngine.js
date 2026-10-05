@@ -236,6 +236,10 @@ export async function runComfortEngine({
     hasOllama: Boolean(String(process.env.OLLAMA_BASE_URL || '').trim()),
   });
 
+  const aiDisabled =
+    process.env.AI_DISABLED === '1' ||
+    String(process.env.AI_DISABLED || '').toLowerCase() === 'true';
+
   const continuing = Array.isArray(history) && history.length > 0;
   const demo = continuing ? null : matchDemoReply(transcript, tradition);
   if (continuing) logInfo('comfort:이어 듣기', { historyTurns: history.length });
@@ -254,6 +258,20 @@ export async function runComfortEngine({
       provider: 'demo',
     };
   }
+  if (aiDisabled) {
+    logWarn('comfort:AI_DISABLED → template (토큰 미사용)');
+    const result = templateComfort({ transcript, tradition, memory, topics });
+    return {
+      reflection: result.reflection,
+      comfort: result.comfort,
+      followup_invite: result.followup_invite || null,
+      risk,
+      tags: topics,
+      practice: result.practice || pickPractice(transcript, topics),
+      provider: 'template',
+    };
+  }
+
   logInfo('comfort:demo miss → AI 경로');
 
   logInfo('comfort:prompt building…');

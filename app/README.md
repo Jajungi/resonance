@@ -22,7 +22,8 @@ npm run dev
 
 - 화면: http://localhost:5173  
 - API: http://localhost:8787  
-- (선택) `.env` — `GROQ_API_KEY` 또는 Ollama. 없어도 템플릿 위로로 시연 가능.
+- 기본: `AI_DISABLED=1` — API 키 없이 demo/템플릿으로 바로 시연 (토큰 미사용).
+- (선택) AI 쓰려면 `.env`에 `GROQ_API_KEY` 또는 Ollama, 그리고 `AI_DISABLED=0`.
 
 ## 폴더
 

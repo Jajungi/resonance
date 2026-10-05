@@ -22,11 +22,15 @@ app.use(express.json({ limit: '8mb' }));
 app.use('/api', logReq);
 
 app.get('/api/health', (_req, res) => {
+  const aiDisabled =
+    process.env.AI_DISABLED === '1' ||
+    String(process.env.AI_DISABLED || '').toLowerCase() === 'true';
   const payload = {
     ok: true,
     ai: {
-      groq: Boolean(process.env.GROQ_API_KEY),
-      ollama: Boolean(process.env.OLLAMA_BASE_URL),
+      disabled: aiDisabled,
+      groq: !aiDisabled && Boolean(process.env.GROQ_API_KEY),
+      ollama: !aiDisabled && Boolean(process.env.OLLAMA_BASE_URL),
     },
   };
   logInfo('[health]', payload.ai);
@@ -60,8 +64,11 @@ process.on('unhandledRejection', (e) => {
 });
 
 app.listen(PORT, () => {
-  const hasGroq = Boolean(process.env.GROQ_API_KEY);
-  const hasOllama = Boolean(String(process.env.OLLAMA_BASE_URL || '').trim());
+  const aiDisabled =
+    process.env.AI_DISABLED === '1' ||
+    String(process.env.AI_DISABLED || '').toLowerCase() === 'true';
+  const hasGroq = !aiDisabled && Boolean(process.env.GROQ_API_KEY);
+  const hasOllama = !aiDisabled && Boolean(String(process.env.OLLAMA_BASE_URL || '').trim());
   console.log('');
   console.log('╔════════════════════════════════════════════════════════╗');
   console.log('║  공명 스테이션 — API 서버 로그 창                      ║');
@@ -80,7 +87,9 @@ app.listen(PORT, () => {
   if (!hasOllama) {
     logWarn('[ai:config] OLLAMA_BASE_URL 비어 있음 (선택) — Groq만 사용');
   }
-  if (!hasGroq && !hasOllama) {
+  if (aiDisabled) {
+    logWarn('[ai:config] AI_DISABLED=1 → demo/템플릿만 사용 (API 토큰 미사용)');
+  } else if (!hasGroq && !hasOllama) {
     logError('[ai:config] AI 미설정 → demo/템플릿만 사용됩니다 (.env 확인)');
   }
 });
