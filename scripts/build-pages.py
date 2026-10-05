@@ -245,7 +245,7 @@ def wrap_doc(title: str, body: str, *, depth: int = 1) -> str:
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{root}styles.css" />
+  <link rel="stylesheet" href="{root}styles.css?v=doc3" />
 </head>
 <body class="doc-page">
   <a class="skip" href="#main">본문으로 건너뛰기</a>

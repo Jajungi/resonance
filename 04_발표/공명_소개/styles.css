@@ -95,7 +95,12 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
   display: grid; grid-template-columns: 210px minmax(0, 1fr);
   gap: 0 3.5rem; align-items: start;
 }
-.page { max-width: var(--col); padding: 3.4rem 0 4.75rem; }
+.page {
+  max-width: var(--col);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 3.4rem 0 4.75rem;
+}
 
 /* 사이드 목차: 데스크톱에서만. 중간 폭에서 알약 탭으로 바뀌며 생겼다 사라지지 않게 함 */
 .toc { display: none; }
@@ -557,24 +562,29 @@ input[type="range"]::-moz-range-thumb {
 .glossary dt { font-weight: 650; font-size: .95rem; }
 .glossary dd { margin: .15rem 0 0; font-size: .94rem; color: var(--ink-2); }
 
-/* 자료 본문: TOC 그리드 없이 가운데 단 */
+/* 자료 본문: TOC 그리드 없이 뷰포트 가운데 단 */
 body.doc-page {
   background:
     radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 120, 48, 0.07), transparent 55%),
     var(--bg);
 }
-.doc-shell {
-  width: 100%;
-  max-width: var(--col);
-  margin: 0 auto;
-  padding: 0 1.25rem;
+body.doc-page > .doc-shell {
+  display: block;
   box-sizing: border-box;
-}
-.doc-main.page,
-.doc-main {
+  width: min(42rem, calc(100% - 2.5rem));
   max-width: 42rem;
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+body.doc-page .doc-main.page,
+body.doc-page .doc-main {
+  display: block;
   width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
   padding: 2.4rem 0 4.5rem;
   box-sizing: border-box;
 }
@@ -627,8 +637,12 @@ body.doc-page {
   border-top: 1px solid var(--line);
 }
 @media (max-width: 719px) {
-  .doc-shell { padding: 0 0.95rem; }
-  .doc-main { padding-top: 1.6rem; }
+  body.doc-page > .doc-shell {
+    width: min(42rem, calc(100% - 1.9rem));
+  }
+  body.doc-page .doc-main {
+    padding-top: 1.6rem;
+  }
 }
 
 .page-next {
