@@ -562,6 +562,30 @@ input[type="range"]::-moz-range-thumb {
 .glossary dt { font-weight: 650; font-size: .95rem; }
 .glossary dd { margin: .15rem 0 0; font-size: .94rem; color: var(--ink-2); }
 
+.doc-main { max-width: 42rem; }
+.doc-body { margin-top: 1.5rem; line-height: 1.75; }
+.doc-body h1, .doc-body h2, .doc-body h3 {
+  font-family: "Noto Serif KR", serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 2rem 0 0.75rem;
+}
+.doc-body p { margin: 0 0 1rem; }
+.doc-body ul, .doc-body ol { margin: 0 0 1rem 1.25rem; }
+.doc-body li { margin: 0.25rem 0; }
+.doc-body hr {
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  margin: 2rem 0;
+}
+.doc-body pre {
+  overflow-x: auto;
+  padding: 0.9rem 1rem;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+}
+
 .page-next {
   margin-top: 2.6rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
   display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; justify-content: space-between;
