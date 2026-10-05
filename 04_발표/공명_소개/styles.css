@@ -925,3 +925,16 @@ body:has(.subnav) .toc { top: 8.5rem; }
   .bar-fill { transition: none; }
   .door:hover { transform: none; }
 }
+/* 푸터 이스터에그: 일반 흐름에 안 섞이게 흐리게 */
+.footer-egg {
+  margin-top: .55rem;
+  color: var(--faint) !important;
+  font-size: .78rem !important;
+  opacity: .72;
+  letter-spacing: -.01em;
+}
+.footer-egg:hover {
+  color: var(--muted) !important;
+  opacity: 1;
+  text-decoration: none !important;
+}
