@@ -39,8 +39,8 @@
         "crisisShare": true
       },
       "createdAt": "2026-09-03T09:46:37.083Z",
-      "lastSeenAt": "2026-09-03T09:46:37.083Z",
-      "token": "f2ba9a23d296195e54a38eb8a5b14bb4569f2100a6af0037"
+      "lastSeenAt": "2026-10-05T01:05:49.698Z",
+      "token": "16aadc35b018abc6a3b9f4a40065a7639f7070ae45948171"
     }
   },
   "capsules": {
@@ -70,9 +70,10 @@
           "type": "topic",
           "label": "가족",
           "summary": "어머니 그리움이 큽니다",
-          "salience": 0.55,
+          "salience": 0.67,
           "userPinned": false,
-          "muted": false
+          "muted": false,
+          "updatedAt": "2026-10-05T01:05:49.705Z"
         }
       ]
     }
