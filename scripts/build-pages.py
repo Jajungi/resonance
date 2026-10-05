@@ -172,7 +172,47 @@ def copy_tree_md(src: Path, dest: Path) -> int:
     return n
 
 
+def build_docs(docs: Path) -> int:
+    """Write readable docs into docs/ (intro local + Pages). Return essay count."""
+    if docs.exists():
+        shutil.rmtree(docs)
+    docs.mkdir(parents=True, exist_ok=True)
+    for src_name, out_name, title in DOC_PAGES:
+        src = DOCS_SRC / src_name
+        if not src.is_file():
+            raise SystemExit(f"missing doc: {src}")
+        body = md_to_html_body(src.read_text(encoding="utf-8"))
+        (docs / out_name).write_text(wrap_doc(title, body, depth=1), encoding="utf-8")
+        shutil.copy2(src, docs / src.name)
+
+    essay_n = 0
+    essays = DOCS_SRC / "공명_소설_분석_독자판"
+    if essays.is_dir():
+        essay_dest = docs / "dokja"
+        essay_n = copy_tree_md(essays, essay_dest)
+        index_items: list[str] = []
+        for md_path in sorted(essay_dest.rglob("*.md")):
+            title = md_path.stem.replace("_", " ")
+            html_rel = md_path.with_suffix(".html").relative_to(essay_dest).as_posix()
+            depth = 2 + len(md_path.relative_to(essay_dest).parts) - 1
+            body = md_to_html_body(md_path.read_text(encoding="utf-8"))
+            md_path.with_suffix(".html").write_text(
+                wrap_doc(title, body, depth=depth), encoding="utf-8"
+            )
+            index_items.append(
+                f'<li><a href="{html.escape(html_rel)}">{html.escape(title)}</a></li>'
+            )
+        index_body = "<ul>\n" + "\n".join(index_items) + "\n</ul>"
+        (essay_dest / "index.html").write_text(
+            wrap_doc("독자판 장별 목록", index_body, depth=2), encoding="utf-8"
+        )
+    return essay_n
+
+
 def main() -> None:
+    # 로컬 serve / file 열기와 Pages가 같은 docs/ 를 쓰도록 소개 폴더에 먼저 생성
+    essay_n = build_docs(INTRO / "docs")
+
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
@@ -192,52 +232,26 @@ def main() -> None:
         raise SystemExit(f"missing station: {STATION}")
     shutil.copy2(STATION, OUT / "station.html")
 
-    docs = OUT / "docs"
-    docs.mkdir(parents=True, exist_ok=True)
-    for src_name, out_name, title in DOC_PAGES:
-        src = DOCS_SRC / src_name
-        if not src.is_file():
-            raise SystemExit(f"missing doc: {src}")
-        body = md_to_html_body(src.read_text(encoding="utf-8"))
-        (docs / out_name).write_text(wrap_doc(title, body, depth=1), encoding="utf-8")
-        # keep raw md next to html for download
-        shutil.copy2(src, docs / src.name)
-
-    essays = DOCS_SRC / "공명_소설_분석_독자판"
-    essay_n = 0
-    if essays.is_dir():
-        essay_dest = docs / "dokja"
-        essay_n = copy_tree_md(essays, essay_dest)
-        # readable HTML for each essay + folder index
-        index_items: list[str] = []
-        for md_path in sorted(essay_dest.rglob("*.md")):
-            title = md_path.stem.replace("_", " ")
-            html_rel = md_path.with_suffix(".html").relative_to(essay_dest).as_posix()
-            depth = 2 + len(md_path.relative_to(essay_dest).parts) - 1
-            body = md_to_html_body(md_path.read_text(encoding="utf-8"))
-            md_path.with_suffix(".html").write_text(
-                wrap_doc(title, body, depth=depth), encoding="utf-8"
-            )
-            index_items.append(
-                f'<li><a href="{html.escape(html_rel)}">{html.escape(title)}</a></li>'
-            )
-        index_body = "<ul>\n" + "\n".join(index_items) + "\n</ul>"
-        (essay_dest / "index.html").write_text(
-            wrap_doc("독자판 장별 목록", index_body, depth=2), encoding="utf-8"
-        )
-
     (OUT / ".nojekyll").write_text("", encoding="utf-8")
 
-    need = ["index.html", "styles.css", "site.js", "station.html", "about.html", "text-dokja.html"]
+    need = [
+        "index.html",
+        "styles.css",
+        "site.js",
+        "station.html",
+        "about.html",
+        "text-dokja.html",
+        "docs/dokja-1.html",
+        "docs/dokja-2.html",
+        "docs/dokja/index.html",
+    ]
     missing = [n for n in need if not (OUT / n).is_file()]
     if missing:
         raise SystemExit(f"build missing: {missing}")
-    for _, out_name, _ in DOC_PAGES:
-        if not (docs / out_name).is_file():
-            raise SystemExit(f"build missing doc: {out_name}")
 
     print(
-        f"Built {OUT} ({sum(1 for _ in OUT.rglob('*'))} paths, "
+        f"Built {OUT} (+ {INTRO / 'docs'}) "
+        f"({sum(1 for _ in OUT.rglob('*'))} paths, "
         f"{len(DOC_PAGES)} doc pages, {essay_n} dokja essays)"
     )
 

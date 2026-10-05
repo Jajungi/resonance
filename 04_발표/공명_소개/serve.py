@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""UTF-8 safe static server for 04_발표 (intro + station)."""
+"""UTF-8 safe static server — GitHub Pages와 같은 루트 배치로 소개 사이트를 연다."""
 from __future__ import annotations
 import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -10,6 +10,7 @@ import webbrowser
 
 ROOT = Path(__file__).resolve().parent.parent  # 04_발표
 INTRO = ROOT / "공명_소개"
+STATION = ROOT / "공명스테이션_예시.html"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -21,32 +22,47 @@ class Handler(BaseHTTPRequestHandler):
 
     def _serve(self, head=False):
         parsed = urlparse(self.path)
-        raw = unquote(parsed.path)
+        raw = unquote(parsed.path) or "/"
 
-        # root = intro (GitHub Pages와 동일). /intro/ 도 유지.
-        if raw in ("/", "/index.html"):
-            return self._send_file(INTRO / "index.html", head)
-
+        # 스테이션
         if raw in ("/station", "/station.html", "/intro/station", "/intro/station.html"):
-            return self._send_file(ROOT / "공명스테이션_예시.html", head)
+            return self._send_file(STATION, head)
 
-        if raw.startswith("/intro"):
+        # /intro/... 별칭 → 소개 루트
+        if raw == "/intro" or raw.startswith("/intro/"):
             rel = raw[len("/intro") :].lstrip("/")
-            if not rel or rel.endswith("/"):
-                path = INTRO / "index.html"
-            else:
-                path = INTRO / rel
-            return self._send_file(path, head)
+            return self._send_intro(rel, head)
 
-        # direct UTF-8 paths under 04_발표
+        # GitHub Pages와 동일: 루트 = 소개 폴더
         rel = raw.lstrip("/")
-        path = ROOT / rel
-        if path.is_dir():
-            idx = path / "index.html"
-            if idx.exists():
+        return self._send_intro(rel, head)
+
+    def _send_intro(self, rel: str, head: bool):
+        if not rel or rel.endswith("/"):
+            path = INTRO / rel / "index.html" if rel else INTRO / "index.html"
+            if path.is_file():
+                return self._send_file(path, head)
+            # 디렉터리 목록 대신 404
+            return self.send_error(404, "File not found")
+
+        # 소개 안 파일 우선
+        cand = INTRO / rel
+        if cand.is_dir():
+            idx = cand / "index.html"
+            if idx.is_file():
                 return self._send_file(idx, head)
-        if path.is_file():
-            return self._send_file(path, head)
+        if cand.is_file():
+            return self._send_file(cand, head)
+
+        # 04_발표 하위(소설 md 등) 직접 열기
+        outer = ROOT / rel
+        if outer.is_dir():
+            idx = outer / "index.html"
+            if idx.is_file():
+                return self._send_file(idx, head)
+        if outer.is_file():
+            return self._send_file(outer, head)
+
         self.send_error(404, "File not found")
 
     def _send_file(self, path: Path, head=False):
@@ -80,11 +96,12 @@ def main():
     ap.add_argument("--no-open", action="store_true")
     args = ap.parse_args()
     httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
-    print(f"Serving {ROOT}")
-    print(f"Intro:   http://127.0.0.1:{args.port}/intro/")
+    print(f"Serving intro as site root (like GitHub Pages)")
+    print(f"Home:    http://127.0.0.1:{args.port}/")
+    print(f"Library: http://127.0.0.1:{args.port}/library.html")
     print(f"Station: http://127.0.0.1:{args.port}/station.html")
     if not args.no_open:
-        webbrowser.open(f"http://127.0.0.1:{args.port}/intro/")
+        webbrowser.open(f"http://127.0.0.1:{args.port}/")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

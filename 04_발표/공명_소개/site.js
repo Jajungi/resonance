@@ -13,51 +13,67 @@
     a.setAttribute("href", stationHref);
   });
 
-  /* ---------- 목차 생성 + 현재 위치 ---------- */
+  /* ---------- 목차 생성 + 현재 위치 (섹션 1개 이상이면 항상) ---------- */
   var toc = document.getElementById("toc");
   var secs = Array.prototype.slice.call(document.querySelectorAll(".sec[data-toc][id]"));
   var links = [];
-  if (toc && secs.length > 2) {
+  if (toc && secs.length >= 1) {
     var ol = toc.querySelector("ol");
-    secs.forEach(function (sec) {
-      var li = document.createElement("li");
-      var a = document.createElement("a");
-      a.href = "#" + sec.id;
-      a.textContent = sec.getAttribute("data-toc");
-      li.appendChild(a);
-      ol.appendChild(li);
-      links.push(a);
-    });
-    toc.classList.add("ready");
-
-    var ticking = false;
-    var sync = function () {
-      ticking = false;
-      var y = window.scrollY + 140;
-      var idx = 0;
-      for (var i = 0; i < secs.length; i++) {
-        if (secs[i].offsetTop <= y) idx = i;
-      }
-      links.forEach(function (a, i) {
-        if (i === idx) a.classList.add("active");
-        else a.classList.remove("active");
+    if (ol) {
+      secs.forEach(function (sec) {
+        var li = document.createElement("li");
+        var a = document.createElement("a");
+        a.href = "#" + sec.id;
+        a.textContent = sec.getAttribute("data-toc");
+        li.appendChild(a);
+        ol.appendChild(li);
+        links.push(a);
       });
-    };
-    window.addEventListener("scroll", function () {
-      if (!ticking) { ticking = true; requestAnimationFrame(sync); }
-    }, { passive: true });
-    sync();
+      toc.classList.add("ready");
+
+      var ticking = false;
+      var sync = function () {
+        ticking = false;
+        var y = window.scrollY + 140;
+        var idx = 0;
+        for (var i = 0; i < secs.length; i++) {
+          if (secs[i].offsetTop <= y) idx = i;
+        }
+        links.forEach(function (a, i) {
+          if (i === idx) a.classList.add("active");
+          else a.classList.remove("active");
+        });
+      };
+      window.addEventListener("scroll", function () {
+        if (!ticking) { ticking = true; requestAnimationFrame(sync); }
+      }, { passive: true });
+      sync();
+    }
   }
 
-  /* ---------- 스크롤 등장 ---------- */
-  if (!reduce && "IntersectionObserver" in window) {
-    var targets = document.querySelectorAll(".sec, .door, .home-sec, .home-tail");
+  /* ---------- 스크롤 등장 (실패해도 본문은 보이게) ---------- */
+  var revealTargets = document.querySelectorAll(".sec, .door, .home-sec, .home-tail");
+  revealTargets.forEach(function (t) { t.classList.add("reveal"); });
+  if (!reduce && "IntersectionObserver" in window && revealTargets.length) {
+    document.documentElement.classList.add("js-motion");
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
       });
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.04 });
-    targets.forEach(function (t) { t.classList.add("reveal"); io.observe(t); });
+    }, { rootMargin: "0px 0px -4% 0px", threshold: 0.01 });
+    revealTargets.forEach(function (t) { io.observe(t); });
+    /* 이미 화면에 있는 요소 / 옵저버 누락 대비 */
+    requestAnimationFrame(function () {
+      revealTargets.forEach(function (t) {
+        var r = t.getBoundingClientRect();
+        if (r.top < window.innerHeight && r.bottom > 0) t.classList.add("in");
+      });
+    });
+    window.setTimeout(function () {
+      revealTargets.forEach(function (t) { t.classList.add("in"); });
+    }, 1200);
+  } else {
+    revealTargets.forEach(function (t) { t.classList.add("in"); });
   }
 
   /* ---------- 홈: 한 줄 파동 ---------- */
@@ -639,8 +655,8 @@
     var defRead = document.getElementById("defRead");
     var defTexts = [
       "격리는 죽음과 무의미를 떠올리는 생각을 의식 밖으로 밀어 내는 일입니다. 그 이야기를 꺼내지 않는 것이 예의처럼 됩니다. 그래서 하루는 그 생각 없이 지나갑니다. 자각이 없어진 것은 아니고, 보지 않기로 한 것입니다.",
-      "애착은 사람에게 생기는 정이 아닙니다. 자페가 말한 애착은, 의식을 한 점에 묶어 두는 일입니다. 신, 나라, 도덕, 가족, 해야 할 일. 그 점이 흔들리지 않으면, 삶의 무의미를 매일 마주하지 않아도 됩니다.",
-      "전환은 주의를 계속 다른 곳으로 돌리는 일입니다. 소식, 오락, 일, 자극. 볼 것이 끊기지 않으면, 유한함과 무의미를 볼 틈이 없습니다. 멈추지 못하는 중독은, 이 전환이 고착된 모습으로 읽히기도 합니다.",
+      "고정은 사람에게 생기는 정이 아닙니다. 자페가 말한 anchoring은, 의식을 한 점에 묶어 두는 일입니다. 신, 나라, 도덕, 가족, 해야 할 일. 그 점이 흔들리지 않으면, 삶의 무의미를 매일 마주하지 않아도 됩니다.",
+      "분산은 주의를 계속 다른 곳으로 돌리는 일입니다. 소식, 오락, 일, 자극. 볼 것이 끊기지 않으면, 유한함과 무의미를 볼 틈이 없습니다. 멈추지 못하는 중독은, 이 분산이 고착된 모습으로 읽히기도 합니다.",
       "승화는 자각을 막지 않습니다. 비극을 예술이나 사상으로 바꾸어, 거리를 두고 바라보게 합니다. 무의미를 알게 된 상태는 남아 있는데, 그 자리에서 바로 무너지지는 않습니다. 자페는 이 길을 드물다고 보았습니다."
     ];
     var defBtns = defBox.querySelectorAll("[data-def]");
