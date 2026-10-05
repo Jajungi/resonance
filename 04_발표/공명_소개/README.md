@@ -14,10 +14,19 @@
 | 파일 | 내용 |
 |------|------|
 | index.html | 홈 |
+| about.html | 종교에 대하여 (하단에 「이것이 왜 종교인가」) |
+| visit.html | 오는 법 |
+| explain.html | 설명 목차 |
 | world.html | 세계 |
 | resonance.html | 공명 |
 | salvation.html | 구원 |
 | ethics.html | 선과 책임 |
 | practice.html | 실천 |
+| library.html | 자료 목차 (독자판 우선) |
+| text-dokja.html | 독자판 입구 |
+| text-sosol.html | 소설 |
+| text-haeseol.html | 해설 |
+| text-gongmyeong.html | 공명경 |
+| text-uirye.html | 의례 안내 |
 
 디자인: 흰 배경·검정 본문의 편집형 레이아웃. 스테이션(앰버 부스)과 UI를 분리합니다.

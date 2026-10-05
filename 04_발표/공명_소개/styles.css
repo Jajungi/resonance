@@ -249,6 +249,65 @@ details.more > *:not(summary) { margin: .8rem 0 0; font-size: .98rem; color: var
 .deflist dd, .deflist .dd { margin: 0; font-size: .97rem; color: var(--ink-2); }
 @media (max-width: 620px) { .deflist > div { grid-template-columns: 1fr; } }
 
+.compare-table,
+.guide-table {
+  width: 100%;
+  margin: 1.35rem 0 1.5rem;
+  border-collapse: collapse;
+  font-size: .96rem;
+  line-height: 1.62;
+}
+.compare-table th,
+.compare-table td,
+.guide-table th,
+.guide-table td {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: .72rem .55rem;
+  text-align: left;
+  vertical-align: top;
+}
+.compare-table thead th,
+.guide-table thead th {
+  font-weight: 650;
+  color: var(--ink);
+  font-size: .9rem;
+}
+.compare-table tbody th[scope="row"],
+.guide-table tbody th[scope="row"] {
+  width: 7.5rem;
+  font-weight: 650;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.compare-table td,
+.guide-table td { color: var(--ink-2); }
+@media (max-width: 620px) {
+  .compare-table tbody th[scope="row"],
+  .guide-table tbody th[scope="row"] { width: auto; white-space: normal; }
+}
+
+.stack-steps {
+  margin: 1.4rem 0 1.55rem;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.stack-steps li {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr);
+  gap: .55rem 0.9rem;
+  padding: .85rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.stack-steps .n {
+  font-weight: 700;
+  color: var(--amber-deep);
+  font-size: .92rem;
+}
+.stack-steps strong { display: block; margin-bottom: .2rem; color: var(--ink); }
+.stack-steps span { color: var(--ink-2); font-size: .96rem; line-height: 1.62; }
+
 /* ---------- 인터랙션 모듈 공통 ---------- */
 .mod { margin: 2rem 0 2.2rem; }
 .mod-frame {
