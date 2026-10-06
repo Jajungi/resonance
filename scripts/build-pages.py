@@ -5,10 +5,13 @@ from __future__ import annotations
 import html
 import re
 import shutil
+import sys
 from pathlib import Path
 from urllib.parse import quote, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _yeonguja_build import build_yeonguja as _build_yeonguja  # noqa: E402
 INTRO = ROOT / "04_발표" / "공명_소개"
 STATION = ROOT / "04_발표" / "공명스테이션_예시.html"
 DOCS_SRC = ROOT / "04_발표"
@@ -100,11 +103,26 @@ def rewrite_href(href: str) -> str:
     if re.match(r"0[1-7]_.+\.md$", Path(norm).name) and "분석" not in norm:
         return f"sosol/{Path(norm).stem}.html{frag}"
 
-    # 연구자판 → GitHub (사이트에 올리지 않음)
-    if "공명_소설_분석" in norm and "공명_소설_분석_독자판" not in norm:
-        idx = norm.find("공명_소설_분석")
-        rel = norm[idx:]
-        return gh_path(rel, blob=rel.endswith(".md")) + frag
+    # 연구자판 합본·목차
+    if "공명_소설_분석_1권_합본" in norm:
+        return gh_path("공명_소설_분석_1권_합본.md", blob=True) + frag
+    if "공명_소설_분석_2권_합본" in norm:
+        return gh_path("공명_소설_분석_2권_합본.md", blob=True) + frag
+    if re.search(r"공명_소설_분석_1권\.md$", norm):
+        return f"yeonguja-1-toc.html{frag}"
+    if re.search(r"공명_소설_분석_2권\.md$", norm):
+        return f"yeonguja-2-toc.html{frag}"
+
+    # 연구자판 장별
+    m = re.search(r"공명_소설_분석/(?:(.+)/)?([^/#]+\.md)$", norm)
+    if m and "공명_소설_분석_독자판" not in norm:
+        sub = m.group(1) or ""
+        name = m.group(2)[:-3] + ".html"
+        if sub:
+            return f"yeonguja/{sub}/{name}{frag}"
+        return f"yeonguja/{name}{frag}"
+    if re.search(r"공명_소설_분석/?$", norm) and "독자판" not in norm:
+        return f"yeonguja/{frag}" if frag else "yeonguja/"
 
     # already site-relative html under docs
     if path.endswith(".html") or path.endswith("/"):
@@ -127,7 +145,8 @@ def md_inline(text: str) -> str:
 
     text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
-    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", link_sub, text)
+    # allow one level of (...) inside href (filenames like 우화(羽化).md)
+    text = re.sub(r"\[([^\]]+)\]\(((?:[^()]+|\([^()]*\))+)\)", link_sub, text)
     return text
 
 
@@ -301,9 +320,9 @@ def wrap_doc(
         h = m.group(1)
         if h.startswith(("http://", "https://", "#", "mailto:")):
             return m.group(0)
-        if re.match(r"^(dokja-1|dokja-2|dokja-1-toc|dokja-2-toc)\.html", h):
+        if re.match(r"^(dokja-1|dokja-2|dokja-1-toc|dokja-2-toc|yeonguja-1-toc|yeonguja-2-toc)\.html", h):
             return f'href="{html.escape("../" * (depth - 1) + h if depth > 1 else h, quote=True)}"'
-        for prefix in ("dokja/", "sosol/"):
+        for prefix in ("dokja/", "sosol/", "yeonguja/"):
             if h.startswith(prefix) and depth >= 2:
                 rest = h[len(prefix) :]
                 if depth == 2:
@@ -328,6 +347,17 @@ def wrap_doc(
         )
         credit = (
             '<p class="credit-faint">원작 『엑스칼리버 뽑습니다』(나리아타). '
+            "원작자로부터 비영리 이용 허락을 받았습니다.</p>"
+        )
+    elif section == "yeonguja":
+        crumb = f'<a href="{root}library.html">자료</a> · <a href="{root}text-yeonguja.html">연구자판</a>'
+        back_links = (
+            f'<a href="{root}text-yeonguja.html">← 연구자판으로</a>\n'
+            f'        <a href="{root}text-dokja.html">독자판으로 →</a>\n'
+            f'        <a href="{root}library.html">자료 전체</a>'
+        )
+        credit = (
+            '<p class="credit-faint">원작 『엑스칼리버 뽑습니다』(나리아타)를 바탕으로 한 연구자 독해. '
             "원작자로부터 비영리 이용 허락을 받았습니다.</p>"
         )
     else:
@@ -423,7 +453,7 @@ def build_toc_html(title: str, items: list[tuple[str, str]], *, depth: int = 1) 
         f'<li><a href="{html.escape(h, quote=True)}">{html.escape(label)}</a></li>'
         for h, label in items
     )
-    body = f"<p>사이트에서 바로 읽는 목차입니다. 연구자판(아크 밀착)은 저장소에만 있습니다.</p>\n<ul>\n{lis}\n</ul>"
+    body = f"<p>사이트에서 바로 읽는 목차입니다.</p>\n<ul>\n{lis}\n</ul>"
     return wrap_doc(title, body, depth=depth, toc_items=[])
 
 
@@ -488,7 +518,7 @@ def build_novel(docs: Path) -> int:
     return n
 
 
-def build_docs(docs: Path) -> tuple[int, int]:
+def build_docs(docs: Path) -> tuple[int, int, int]:
     if docs.exists():
         shutil.rmtree(docs)
     docs.mkdir(parents=True, exist_ok=True)
@@ -508,7 +538,15 @@ def build_docs(docs: Path) -> tuple[int, int]:
     essays = DOCS_SRC / "공명_소설_분석_독자판"
     essay_n = 0
     if not essays.is_dir():
-        return essay_n, novel_n
+        yeonguja_n = _build_yeonguja(
+            docs,
+            docs_src=DOCS_SRC,
+            chapter_title=chapter_title,
+            md_to_html_body=md_to_html_body,
+            wrap_doc=wrap_doc,
+            build_toc_html=build_toc_html,
+        )
+        return essay_n, novel_n, yeonguja_n
 
     essay_dest = docs / "dokja"
     essay_dest.mkdir(parents=True, exist_ok=True)
@@ -560,11 +598,20 @@ def build_docs(docs: Path) -> tuple[int, int]:
     (docs / "dokja-2-toc.html").write_text(
         build_toc_html("독자판 2권 목차", toc2, depth=1), encoding="utf-8"
     )
-    return essay_n, novel_n
+
+    yeonguja_n = _build_yeonguja(
+        docs,
+        docs_src=DOCS_SRC,
+        chapter_title=chapter_title,
+        md_to_html_body=md_to_html_body,
+        wrap_doc=wrap_doc,
+        build_toc_html=build_toc_html,
+    )
+    return essay_n, novel_n, yeonguja_n
 
 
 def main() -> None:
-    essay_n, novel_n = build_docs(INTRO / "docs")
+    essay_n, novel_n, yeonguja_n = build_docs(INTRO / "docs")
 
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -600,6 +647,10 @@ def main() -> None:
         "docs/sosol/index.html",
         "docs/sosol/01_빛_없는_아래.html",
         "docs/sosol/07_여명.html",
+        "text-yeonguja.html",
+        "docs/yeonguja/index.html",
+        "docs/yeonguja-1-toc.html",
+        "docs/yeonguja-2-toc.html",
     ]
     missing = [n for n in need if not (OUT / n).is_file()]
     if missing:
@@ -612,7 +663,9 @@ def main() -> None:
             h = m.group(1)
             if h.startswith(("http://", "https://", "#", "mailto:")):
                 continue
-            if ".md" in h or ("공명_소설_분석" in h and "독자판" not in h):
+            if ".md" in h:
+                bad.append(f"{p.relative_to(OUT)} → {h}")
+            if "공명_소설_분석" in h and "독자판" not in h and "github.com" not in h:
                 bad.append(f"{p.relative_to(OUT)} → {h}")
     if bad:
         raise SystemExit("broken doc links remain:\n" + "\n".join(bad[:30]))
@@ -620,7 +673,8 @@ def main() -> None:
     print(
         f"Built {OUT} (+ {INTRO / 'docs'}) "
         f"({sum(1 for _ in OUT.rglob('*'))} paths, "
-        f"{len(DOC_PAGES)} volumes, {essay_n} essays, {novel_n} novel parts)"
+        f"{len(DOC_PAGES)} volumes, {essay_n} essays, {novel_n} novel parts, "
+        f"{yeonguja_n} researcher)"
     )
 
 
