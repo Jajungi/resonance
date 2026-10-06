@@ -131,12 +131,28 @@ def md_inline(text: str) -> str:
     return text
 
 
+def slugify_heading(text: str, used: set[str]) -> str:
+    plain = re.sub(r"<[^>]+>", "", text)
+    plain = html.unescape(plain)
+    base = re.sub(r"[^\w가-힣]+", "-", plain, flags=re.UNICODE).strip("-").lower()
+    if not base:
+        base = "sec"
+    hid = base
+    n = 2
+    while hid in used:
+        hid = f"{base}-{n}"
+        n += 1
+    used.add(hid)
+    return hid
+
+
 def md_to_html_body(md: str) -> str:
     lines = md.replace("\r\n", "\n").split("\n")
     out: list[str] = []
     i = 0
     in_ul = False
     in_ol = False
+    used_ids: set[str] = set()
 
     def close_lists() -> None:
         nonlocal in_ul, in_ol
@@ -168,7 +184,10 @@ def md_to_html_body(md: str) -> str:
         if m:
             close_lists()
             level = len(m.group(1))
-            out.append(f"<h{level}>{md_inline(m.group(2).strip())}</h{level}>")
+            title = m.group(2).strip()
+            inner = md_inline(title)
+            hid = slugify_heading(title, used_ids)
+            out.append(f'<h{level} id="{html.escape(hid, quote=True)}">{inner}</h{level}>')
             i += 1
             continue
         if re.match(r"^>\s?", line):
@@ -293,6 +312,9 @@ def wrap_doc(
             "원작자로부터 비영리 이용 허락을 받았습니다.</p>"
         )
 
+    body_class = "doc-page doc-sosol" if section == "sosol" else "doc-page"
+    toc_title = "이 부" if section == "sosol" else "이 글"
+
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -304,9 +326,9 @@ def wrap_doc(
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{root}styles.css?v=doc4" />
+  <link rel="stylesheet" href="{root}styles.css?v=doc5" />
 </head>
-<body class="doc-page">
+<body class="{body_class}">
   <a class="skip" href="#main">본문으로 건너뛰기</a>
   <header class="site-header">
     <div class="header-inner">
@@ -322,7 +344,15 @@ def wrap_doc(
     </div>
   </header>
   <div class="doc-shell">
+    <aside class="doc-toc toc" id="docToc" aria-label="이 글의 목차">
+      <p class="toc-title">{toc_title}</p>
+      <ol></ol>
+    </aside>
     <main id="main" class="page doc-main">
+      <details class="doc-toc-mobile">
+        <summary>목차 · 화 바로가기</summary>
+        <ol></ol>
+      </details>
       <p class="eyebrow">{crumb}</p>
       <h1>{html.escape(title)}</h1>
       <article class="doc-body">

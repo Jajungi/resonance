@@ -562,7 +562,7 @@ input[type="range"]::-moz-range-thumb {
 .glossary dt { font-weight: 650; font-size: .95rem; }
 .glossary dd { margin: .15rem 0 0; font-size: .94rem; color: var(--ink-2); }
 
-/* 자료 본문: TOC 그리드 없이 뷰포트 가운데 단 */
+/* 자료 본문: 가운데 단 + (소설 등) 왼쪽 화 목차 */
 body.doc-page {
   background:
     radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 120, 48, 0.07), transparent 55%),
@@ -578,6 +578,15 @@ body.doc-page > .doc-shell {
   padding-left: 0;
   padding-right: 0;
 }
+body.doc-page.doc-sosol > .doc-shell {
+  display: grid;
+  grid-template-columns: minmax(11rem, 15rem) minmax(0, 42rem);
+  gap: 2rem 2.75rem;
+  width: min(62rem, calc(100% - 2.5rem));
+  max-width: 62rem;
+  justify-content: center;
+  align-items: start;
+}
 body.doc-page .doc-main.page,
 body.doc-page .doc-main {
   display: block;
@@ -587,7 +596,70 @@ body.doc-page .doc-main {
   margin-right: 0;
   padding: 2.4rem 0 4.5rem;
   box-sizing: border-box;
+  grid-column: 2;
 }
+body.doc-page:not(.doc-sosol) .doc-main { grid-column: auto; }
+body.doc-page .doc-toc {
+  display: none;
+  grid-column: 1;
+  grid-row: 1;
+}
+body.doc-page:not(.doc-sosol) .doc-toc { display: none !important; }
+body.doc-page.doc-sosol .doc-toc.ready {
+  display: block;
+  position: sticky;
+  top: 5.4rem;
+  max-height: calc(100vh - 6.2rem);
+  overflow-y: auto;
+  padding: 2.4rem 0 2rem;
+  overscroll-behavior: contain;
+}
+body.doc-page .doc-toc .toc-title { position: sticky; top: 0; background: var(--bg); padding-bottom: .35rem; }
+body.doc-page .doc-toc a.toc-h2 {
+  font-size: .8rem;
+  font-weight: 650;
+  color: var(--ink-2);
+  margin-top: .55rem;
+}
+body.doc-page .doc-toc a.toc-h3 {
+  font-size: .8rem;
+  padding-left: 1.05rem;
+}
+body.doc-page .doc-toc a.toc-h1 { display: none; }
+.doc-toc-mobile {
+  display: none;
+  margin: 0 0 1.25rem;
+  padding: .65rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+.doc-toc-mobile > summary {
+  cursor: pointer;
+  font-size: .86rem;
+  font-weight: 650;
+  color: var(--muted);
+  list-style: none;
+}
+.doc-toc-mobile > summary::-webkit-details-marker { display: none; }
+.doc-toc-mobile ol {
+  margin: .65rem 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: min(50vh, 22rem);
+  overflow-y: auto;
+}
+.doc-toc-mobile a {
+  display: block;
+  padding: .28rem 0;
+  font-size: .86rem;
+  line-height: 1.4;
+  color: var(--muted);
+  text-decoration: none;
+}
+.doc-toc-mobile a.toc-h2 { font-weight: 650; color: var(--ink-2); margin-top: .35rem; }
+.doc-toc-mobile a.toc-h3 { padding-left: .85rem; }
+.doc-toc-mobile a:hover { color: var(--amber-deep); }
 .doc-main > h1 {
   font-family: var(--serif);
   font-size: clamp(1.55rem, 3.2vw, 2rem);
@@ -602,9 +674,11 @@ body.doc-page .doc-main {
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 2rem 0 0.75rem;
+  scroll-margin-top: 5.5rem;
 }
 .doc-body h1 { font-size: 1.35rem; }
 .doc-body h2 { font-size: 1.2rem; }
+.doc-body h3 { font-size: 1.08rem; }
 .doc-body p { margin: 0 0 1rem; }
 .doc-body ul, .doc-body ol { margin: 0 0 1rem 1.25rem; }
 .doc-body li { margin: 0.25rem 0; }
@@ -636,8 +710,19 @@ body.doc-page .doc-main {
   padding-top: 1.25rem;
   border-top: 1px solid var(--line);
 }
+@media (max-width: 1079px) {
+  body.doc-page.doc-sosol > .doc-shell {
+    display: block;
+    width: min(42rem, calc(100% - 2.5rem));
+    max-width: 42rem;
+  }
+  body.doc-page .doc-toc,
+  body.doc-page .doc-toc.ready { display: none !important; }
+  body.doc-page .doc-toc-mobile.has-items { display: block; }
+}
 @media (max-width: 719px) {
-  body.doc-page > .doc-shell {
+  body.doc-page > .doc-shell,
+  body.doc-page.doc-sosol > .doc-shell {
     width: min(42rem, calc(100% - 1.9rem));
   }
   body.doc-page .doc-main {
