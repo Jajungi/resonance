@@ -28,13 +28,13 @@ def build_yeonguja(
     n = 0
 
     for md_path in sorted(essays.rglob("*.md")):
-        if md_path.name.upper() == "README.MD" or md_path.name.startswith("_"):
+        if md_path.name.startswith("_"):
             continue
         if "_quotes" in md_path.parts:
             continue
         rel = md_path.relative_to(essays)
         html_rel = rel.with_suffix(".html").as_posix()
-        title = chapter_title(md_path.stem)
+        title = "부 안내" if md_path.name.upper() == "README.MD" else chapter_title(md_path.stem)
         depth = 2 + len(rel.parts) - 1
         body, _headings = md_to_html_body(md_path.read_text(encoding="utf-8"))
         out_path = dest / rel.with_suffix(".html")
