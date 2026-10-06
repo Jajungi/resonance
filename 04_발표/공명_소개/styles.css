@@ -1047,6 +1047,26 @@ details.faq > div > p:last-child { margin-bottom: 0; }
   border-top: 1px solid var(--line); font-size: .84rem; line-height: 1.6; color: var(--faint);
 }
 .footer-note strong { color: var(--amber-deep); font-weight: 650; }
+.credit-faint {
+  margin: 1.25rem 0 0;
+  font-size: .72rem;
+  line-height: 1.55;
+  color: var(--faint);
+  opacity: .72;
+  font-weight: 400;
+  letter-spacing: .01em;
+}
+.doc-part-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem 1.25rem;
+  margin: 1.75rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: .9rem;
+}
+.doc-part-nav a { color: var(--muted); text-decoration: none; }
+.doc-part-nav a:hover { color: var(--amber-deep); text-decoration: underline; }
 @media (max-width: 860px) {
   .footer-inner { grid-template-columns: 1fr; gap: 1.6rem; }
   .footer-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -28,6 +28,26 @@ DOC_PAGES = [
     ("공명_소설_독자_2권_합본.md", "dokja-2.html", "독자판 2권 합본"),
 ]
 
+NOVEL_PARTS = [
+    "01_빛_없는_아래.md",
+    "02_선별의_도시.md",
+    "03_바깥.md",
+    "04_별들의_전장.md",
+    "05_무대.md",
+    "06_종말의_문장.md",
+    "07_여명.md",
+]
+
+NOVEL_LABELS = {
+    "01_빛_없는_아래": "1부 · 빛 없는 아래",
+    "02_선별의_도시": "2부 · 선별의 도시",
+    "03_바깥": "3부 · 바깥",
+    "04_별들의_전장": "4부 · 별들의 전장",
+    "05_무대": "5부 · 무대",
+    "06_종말의_문장": "6부 · 종말의 문장",
+    "07_여명": "7부 · 여명",
+}
+
 
 def rewrite_href(href: str) -> str:
     """Map repo-relative markdown links to live site or GitHub."""
@@ -70,13 +90,19 @@ def rewrite_href(href: str) -> str:
     if re.search(r"공명_소설_독자_2권\.md$", norm):
         return f"dokja-2-toc.html{frag}"
 
-    # 연구자판·분권 원고 → GitHub (사이트에 올리지 않음)
+    # 소설 분권 (사이트에 게시)
+    m = re.search(r"공명_소설/([^/#]+\.md)$", norm)
+    if m and m.group(1) != "README.md":
+        return f"sosol/{m.group(1)[:-3]}.html{frag}"
+    if re.search(r"(?:^|/)공명_소설/?$", norm):
+        return f"sosol/{frag}" if frag else "sosol/"
+    # same-folder novel links (from README.md)
+    if re.match(r"0[1-7]_.+\.md$", Path(norm).name) and "분석" not in norm:
+        return f"sosol/{Path(norm).stem}.html{frag}"
+
+    # 연구자판 → GitHub (사이트에 올리지 않음)
     if "공명_소설_분석" in norm and "공명_소설_분석_독자판" not in norm:
         idx = norm.find("공명_소설_분석")
-        rel = norm[idx:]
-        return gh_path(rel, blob=rel.endswith(".md")) + frag
-    if re.search(r"공명_소설(?:/|$)", norm) and "공명_소설_분석" not in norm:
-        idx = norm.find("공명_소설")
         rel = norm[idx:]
         return gh_path(rel, blob=rel.endswith(".md")) + frag
 
@@ -213,26 +239,59 @@ def md_to_html_body(md: str) -> str:
     return re.sub(r'href="([^"]+)"', href_fix, "\n".join(out))
 
 
-def wrap_doc(title: str, body: str, *, depth: int = 1) -> str:
+def wrap_doc(
+    title: str,
+    body: str,
+    *,
+    depth: int = 1,
+    section: str = "dokja",
+    nav_extra: str = "",
+) -> str:
     root = "../" * depth
-    # rewrite relative dokja links based on depth
+    # rewrite relative dokja/sosol links based on depth
     def fix_local(m: re.Match[str]) -> str:
         h = m.group(1)
         if h.startswith(("http://", "https://", "#", "mailto:")):
             return m.group(0)
-        # dokja-1.html etc from nested folder need ../
         if re.match(r"^(dokja-1|dokja-2|dokja-1-toc|dokja-2-toc)\.html", h):
             return f'href="{html.escape("../" * (depth - 1) + h if depth > 1 else h, quote=True)}"'
-        if h.startswith("dokja/") and depth >= 2:
-            # from docs/dokja/foo.html depth=2, dokja/x → x or ../dokja/x
-            rest = h[len("dokja/") :]
-            if depth == 2:
-                return f'href="{html.escape(rest, quote=True)}"'
-            if depth == 3:
-                return f'href="{html.escape("../" + rest, quote=True)}"'
+        for prefix in ("dokja/", "sosol/"):
+            if h.startswith(prefix) and depth >= 2:
+                rest = h[len(prefix) :]
+                if depth == 2:
+                    # same folder only if same prefix
+                    if section == prefix.rstrip("/"):
+                        return f'href="{html.escape(rest, quote=True)}"'
+                    return f'href="{html.escape("../" + prefix + rest, quote=True)}"'
+                if depth == 3:
+                    if section == prefix.rstrip("/"):
+                        return f'href="{html.escape("../" + rest, quote=True)}"'
+                    return f'href="{html.escape("../../" + prefix + rest, quote=True)}"'
         return m.group(0)
 
     body2 = re.sub(r'href="([^"]+)"', fix_local, body)
+
+    if section == "sosol":
+        crumb = f'<a href="{root}library.html">자료</a> · <a href="{root}text-sosol.html">소설</a>'
+        back_links = (
+            f'<a href="{root}text-sosol.html">← 소설로</a>\n'
+            f'        <a href="{root}text-dokja.html">독자판으로 →</a>\n'
+            f'        <a href="{root}library.html">자료 전체</a>'
+        )
+        credit = (
+            '<p class="credit-faint">원작 『엑스칼리버 뽑습니다』(나리아타). '
+            "원작자로부터 비영리 이용 허락을 받았습니다.</p>"
+        )
+    else:
+        crumb = f'<a href="{root}library.html">자료</a> · <a href="{root}text-dokja.html">독자판</a>'
+        back_links = (
+            f'<a href="{root}text-dokja.html">← 독자판으로</a>\n'
+            f'        <a href="{root}library.html">자료 전체</a>'
+        )
+        credit = (
+            '<p class="credit-faint">원작 『엑스칼리버 뽑습니다』(나리아타)를 바탕으로 한 읽기. '
+            "원작자로부터 비영리 이용 허락을 받았습니다.</p>"
+        )
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -245,7 +304,7 @@ def wrap_doc(title: str, body: str, *, depth: int = 1) -> str:
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{root}styles.css?v=doc3" />
+  <link rel="stylesheet" href="{root}styles.css?v=doc4" />
 </head>
 <body class="doc-page">
   <a class="skip" href="#main">본문으로 건너뛰기</a>
@@ -264,14 +323,14 @@ def wrap_doc(title: str, body: str, *, depth: int = 1) -> str:
   </header>
   <div class="doc-shell">
     <main id="main" class="page doc-main">
-      <p class="eyebrow"><a href="{root}library.html">자료</a> · <a href="{root}text-dokja.html">독자판</a></p>
+      <p class="eyebrow">{crumb}</p>
       <h1>{html.escape(title)}</h1>
       <article class="doc-body">
 {body2}
       </article>
+{nav_extra}      {credit}
       <nav class="page-next" aria-label="돌아가기">
-        <a href="{root}text-dokja.html">← 독자판으로</a>
-        <a href="{root}library.html">자료 전체</a>
+        {back_links}
       </nav>
     </main>
   </div>
@@ -295,7 +354,67 @@ def build_toc_html(title: str, items: list[tuple[str, str]], *, depth: int = 1) 
     return wrap_doc(title, body, depth=depth)
 
 
-def build_docs(docs: Path) -> int:
+def build_novel(docs: Path) -> int:
+    novel_src = DOCS_SRC / "공명_소설"
+    dest = docs / "sosol"
+    dest.mkdir(parents=True, exist_ok=True)
+    index_items: list[str] = []
+    n = 0
+    stems = [Path(name).stem for name in NOVEL_PARTS]
+
+    for i, name in enumerate(NOVEL_PARTS):
+        md_path = novel_src / name
+        if not md_path.is_file():
+            raise SystemExit(f"missing novel part: {md_path}")
+        stem = md_path.stem
+        title = NOVEL_LABELS.get(stem, chapter_title(stem))
+        body = md_to_html_body(md_path.read_text(encoding="utf-8"))
+        nav_bits: list[str] = ['<nav class="doc-part-nav" aria-label="부 이동">']
+        if i > 0:
+            prev = stems[i - 1]
+            nav_bits.append(
+                f'<a href="{html.escape(prev + ".html", quote=True)}">'
+                f"← {html.escape(NOVEL_LABELS.get(prev, prev))}</a>"
+            )
+        nav_bits.append(f'<a href="index.html">부 목록</a>')
+        if i + 1 < len(stems):
+            nxt = stems[i + 1]
+            nav_bits.append(
+                f'<a href="{html.escape(nxt + ".html", quote=True)}">'
+                f"{html.escape(NOVEL_LABELS.get(nxt, nxt))} →</a>"
+            )
+        nav_bits.append("</nav>\n")
+        (dest / f"{stem}.html").write_text(
+            wrap_doc(
+                title,
+                body,
+                depth=2,
+                section="sosol",
+                nav_extra="".join(nav_bits),
+            ),
+            encoding="utf-8",
+        )
+        index_items.append(
+            f'<li><a href="{html.escape(stem + ".html", quote=True)}">'
+            f"{html.escape(title)}</a></li>"
+        )
+        n += 1
+
+    index_body = (
+        "<p>공명 자료의 소설 분권입니다. 장면으로 따라 읽는 해설은 "
+        '<a href="../dokja/">독자판</a>에 있습니다.</p>\n'
+        '<p class="credit-faint">원작 『엑스칼리버 뽑습니다』(나리아타). '
+        "원작자로부터 비영리 이용 허락을 받았습니다.</p>\n"
+        "<ul>\n" + "\n".join(index_items) + "\n</ul>"
+    )
+    (dest / "index.html").write_text(
+        wrap_doc("소설 분권", index_body, depth=2, section="sosol"),
+        encoding="utf-8",
+    )
+    return n
+
+
+def build_docs(docs: Path) -> tuple[int, int]:
     if docs.exists():
         shutil.rmtree(docs)
     docs.mkdir(parents=True, exist_ok=True)
@@ -305,12 +424,16 @@ def build_docs(docs: Path) -> int:
         if not src.is_file():
             raise SystemExit(f"missing doc: {src}")
         body = md_to_html_body(src.read_text(encoding="utf-8"))
-        (docs / out_name).write_text(wrap_doc(title, body, depth=1), encoding="utf-8")
+        (docs / out_name).write_text(
+            wrap_doc(title, body, depth=1, section="dokja"), encoding="utf-8"
+        )
+
+    novel_n = build_novel(docs)
 
     essays = DOCS_SRC / "공명_소설_분석_독자판"
     essay_n = 0
     if not essays.is_dir():
-        return 0
+        return essay_n, novel_n
 
     essay_dest = docs / "dokja"
     essay_dest.mkdir(parents=True, exist_ok=True)
@@ -328,7 +451,9 @@ def build_docs(docs: Path) -> int:
         body = md_to_html_body(md_path.read_text(encoding="utf-8"))
         out_path = essay_dest / rel.with_suffix(".html")
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(wrap_doc(title, body, depth=depth), encoding="utf-8")
+        out_path.write_text(
+            wrap_doc(title, body, depth=depth, section="dokja"), encoding="utf-8"
+        )
         essay_n += 1
         index_items.append(
             f'<li><a href="{html.escape(html_rel, quote=True)}">{html.escape(title)}</a></li>'
@@ -342,10 +467,12 @@ def build_docs(docs: Path) -> int:
     (essay_dest / "index.html").write_text(
         wrap_doc(
             "독자판 장별 목록",
-            "<p>1권과 2권 장별 읽기입니다.</p>\n<ul>\n"
+            "<p>1권과 2권 장별 읽기입니다. 소설 본편은 "
+            '<a href="../sosol/">소설 분권</a>에 있습니다.</p>\n<ul>\n'
             + "\n".join(index_items)
             + "\n</ul>",
             depth=2,
+            section="dokja",
         ),
         encoding="utf-8",
     )
@@ -356,11 +483,11 @@ def build_docs(docs: Path) -> int:
     (docs / "dokja-2-toc.html").write_text(
         build_toc_html("독자판 2권 목차", toc2, depth=1), encoding="utf-8"
     )
-    return essay_n
+    return essay_n, novel_n
 
 
 def main() -> None:
-    essay_n = build_docs(INTRO / "docs")
+    essay_n, novel_n = build_docs(INTRO / "docs")
 
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -393,6 +520,9 @@ def main() -> None:
         "docs/dokja-2.html",
         "docs/dokja/index.html",
         "docs/dokja-1-toc.html",
+        "docs/sosol/index.html",
+        "docs/sosol/01_빛_없는_아래.html",
+        "docs/sosol/07_여명.html",
     ]
     missing = [n for n in need if not (OUT / n).is_file()]
     if missing:
@@ -413,7 +543,7 @@ def main() -> None:
     print(
         f"Built {OUT} (+ {INTRO / 'docs'}) "
         f"({sum(1 for _ in OUT.rglob('*'))} paths, "
-        f"{len(DOC_PAGES)} volumes, {essay_n} essays)"
+        f"{len(DOC_PAGES)} volumes, {essay_n} essays, {novel_n} novel parts)"
     )
 
 
