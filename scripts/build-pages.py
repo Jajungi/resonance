@@ -146,13 +146,15 @@ def slugify_heading(text: str, used: set[str]) -> str:
     return hid
 
 
-def md_to_html_body(md: str) -> str:
+def md_to_html_body(md: str) -> tuple[str, list[tuple[int, str, str]]]:
+    """Return (html_body, toc_items) where toc_items are (level, id, title)."""
     lines = md.replace("\r\n", "\n").split("\n")
     out: list[str] = []
     i = 0
     in_ul = False
     in_ol = False
     used_ids: set[str] = set()
+    toc_items: list[tuple[int, str, str]] = []
 
     def close_lists() -> None:
         nonlocal in_ul, in_ol
@@ -188,6 +190,8 @@ def md_to_html_body(md: str) -> str:
             inner = md_inline(title)
             hid = slugify_heading(title, used_ids)
             out.append(f'<h{level} id="{html.escape(hid, quote=True)}">{inner}</h{level}>')
+            if level >= 2:
+                toc_items.append((level, hid, title))
             i += 1
             continue
         if re.match(r"^>\s?", line):
@@ -255,7 +259,31 @@ def md_to_html_body(md: str) -> str:
         h = rewrite_href(m.group(1))
         return f'href="{html.escape(h, quote=True)}"'
 
-    return re.sub(r'href="([^"]+)"', href_fix, "\n".join(out))
+    return re.sub(r'href="([^"]+)"', href_fix, "\n".join(out)), toc_items
+
+
+def filter_episode_toc(
+    items: list[tuple[int, str, str]],
+) -> list[tuple[int, str, str]]:
+    """Prefer ### 화 entries; keep ## only when a part has several."""
+    h2n = sum(1 for lv, _, _ in items if lv == 2)
+    if h2n <= 1:
+        only_h3 = [it for it in items if it[0] == 3]
+        if len(only_h3) >= 2:
+            return only_h3
+    return [it for it in items if it[0] in (2, 3)]
+
+
+def toc_list_html(items: list[tuple[int, str, str]]) -> str:
+    lis: list[str] = []
+    for level, hid, title in items:
+        lis.append(
+            "<li>"
+            f'<a class="toc-h{level}" href="#{html.escape(hid, quote=True)}">'
+            f"{html.escape(title)}</a>"
+            "</li>"
+        )
+    return "\n".join(lis)
 
 
 def wrap_doc(
@@ -265,6 +293,7 @@ def wrap_doc(
     depth: int = 1,
     section: str = "dokja",
     nav_extra: str = "",
+    toc_items: list[tuple[int, str, str]] | None = None,
 ) -> str:
     root = "../" * depth
     # rewrite relative dokja/sosol links based on depth
@@ -314,6 +343,28 @@ def wrap_doc(
 
     body_class = "doc-page doc-sosol" if section == "sosol" else "doc-page"
     toc_title = "이 부" if section == "sosol" else "이 글"
+    filtered = filter_episode_toc(toc_items or [])
+    show_toc = section == "sosol" and len(filtered) >= 2
+    toc_lis = toc_list_html(filtered) if show_toc else ""
+    toc_ready = " ready" if show_toc else ""
+    toc_aside = ""
+    toc_mobile = ""
+    if section == "sosol":
+        toc_aside = f"""    <aside class="doc-toc{toc_ready}" id="docToc" aria-label="이 부의 목차">
+      <p class="toc-title">{toc_title}</p>
+      <ol>
+{toc_lis}
+      </ol>
+    </aside>
+"""
+        if show_toc:
+            toc_mobile = f"""      <details class="doc-toc-mobile has-items">
+        <summary>목차 · 화 바로가기</summary>
+        <ol>
+{toc_lis}
+        </ol>
+      </details>
+"""
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -326,7 +377,7 @@ def wrap_doc(
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{root}styles.css?v=doc5" />
+  <link rel="stylesheet" href="{root}styles.css?v=doc6" />
 </head>
 <body class="{body_class}">
   <a class="skip" href="#main">본문으로 건너뛰기</a>
@@ -344,16 +395,8 @@ def wrap_doc(
     </div>
   </header>
   <div class="doc-shell">
-    <aside class="doc-toc toc" id="docToc" aria-label="이 글의 목차">
-      <p class="toc-title">{toc_title}</p>
-      <ol></ol>
-    </aside>
-    <main id="main" class="page doc-main">
-      <details class="doc-toc-mobile">
-        <summary>목차 · 화 바로가기</summary>
-        <ol></ol>
-      </details>
-      <p class="eyebrow">{crumb}</p>
+{toc_aside}    <main id="main" class="page doc-main">
+{toc_mobile}      <p class="eyebrow">{crumb}</p>
       <h1>{html.escape(title)}</h1>
       <article class="doc-body">
 {body2}
@@ -381,7 +424,7 @@ def build_toc_html(title: str, items: list[tuple[str, str]], *, depth: int = 1) 
         for h, label in items
     )
     body = f"<p>사이트에서 바로 읽는 목차입니다. 연구자판(아크 밀착)은 저장소에만 있습니다.</p>\n<ul>\n{lis}\n</ul>"
-    return wrap_doc(title, body, depth=depth)
+    return wrap_doc(title, body, depth=depth, toc_items=[])
 
 
 def build_novel(docs: Path) -> int:
@@ -398,7 +441,7 @@ def build_novel(docs: Path) -> int:
             raise SystemExit(f"missing novel part: {md_path}")
         stem = md_path.stem
         title = NOVEL_LABELS.get(stem, chapter_title(stem))
-        body = md_to_html_body(md_path.read_text(encoding="utf-8"))
+        body, headings = md_to_html_body(md_path.read_text(encoding="utf-8"))
         nav_bits: list[str] = ['<nav class="doc-part-nav" aria-label="부 이동">']
         if i > 0:
             prev = stems[i - 1]
@@ -421,6 +464,7 @@ def build_novel(docs: Path) -> int:
                 depth=2,
                 section="sosol",
                 nav_extra="".join(nav_bits),
+                toc_items=headings,
             ),
             encoding="utf-8",
         )
@@ -438,7 +482,7 @@ def build_novel(docs: Path) -> int:
         "<ul>\n" + "\n".join(index_items) + "\n</ul>"
     )
     (dest / "index.html").write_text(
-        wrap_doc("소설 분권", index_body, depth=2, section="sosol"),
+        wrap_doc("소설 분권", index_body, depth=2, section="sosol", toc_items=[]),
         encoding="utf-8",
     )
     return n
@@ -453,9 +497,10 @@ def build_docs(docs: Path) -> tuple[int, int]:
         src = DOCS_SRC / src_name
         if not src.is_file():
             raise SystemExit(f"missing doc: {src}")
-        body = md_to_html_body(src.read_text(encoding="utf-8"))
+        body, _headings = md_to_html_body(src.read_text(encoding="utf-8"))
         (docs / out_name).write_text(
-            wrap_doc(title, body, depth=1, section="dokja"), encoding="utf-8"
+            wrap_doc(title, body, depth=1, section="dokja", toc_items=[]),
+            encoding="utf-8",
         )
 
     novel_n = build_novel(docs)
@@ -478,11 +523,12 @@ def build_docs(docs: Path) -> tuple[int, int]:
         html_rel = rel.with_suffix(".html").as_posix()
         title = chapter_title(md_path.stem)
         depth = 2 + len(rel.parts) - 1
-        body = md_to_html_body(md_path.read_text(encoding="utf-8"))
+        body, _headings = md_to_html_body(md_path.read_text(encoding="utf-8"))
         out_path = essay_dest / rel.with_suffix(".html")
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(
-            wrap_doc(title, body, depth=depth, section="dokja"), encoding="utf-8"
+            wrap_doc(title, body, depth=depth, section="dokja", toc_items=[]),
+            encoding="utf-8",
         )
         essay_n += 1
         index_items.append(
@@ -503,6 +549,7 @@ def build_docs(docs: Path) -> tuple[int, int]:
             + "\n</ul>",
             depth=2,
             section="dokja",
+            toc_items=[],
         ),
         encoding="utf-8",
     )

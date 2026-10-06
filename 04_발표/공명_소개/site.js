@@ -51,44 +51,24 @@
     }
   }
 
-  /* ---------- 소설 본문: 화(제목) 목차 ---------- */
+  /* ---------- 소설 본문: 화 목차 현재 위치 (목록은 HTML에 이미 있음) ---------- */
   var docToc = document.getElementById("docToc");
-  var docBody = document.querySelector(".doc-sosol .doc-body");
-  if (docToc && docBody) {
-    var heads = Array.prototype.slice.call(
-      docBody.querySelectorAll("h2[id], h3[id]")
+  if (docToc && docToc.classList.contains("ready")) {
+    var docLinks = Array.prototype.slice.call(
+      document.querySelectorAll("#docToc a[href^='#'], .doc-toc-mobile a[href^='#']")
     );
-    /* 부가 하나뿐이면 h2 생략하고 화(h3)만 — h2가 여러 개면 둘 다 */
-    var h2n = heads.filter(function (h) { return h.tagName === "H2"; }).length;
-    if (h2n <= 1) {
-      heads = heads.filter(function (h) { return h.tagName === "H3"; });
-    }
-    var docOl = docToc.querySelector("ol");
-    var mobile = document.querySelector(".doc-toc-mobile");
-    var mobileOl = mobile ? mobile.querySelector("ol") : null;
-    var docLinks = [];
     var absTop = function (el) {
       return el.getBoundingClientRect().top + window.scrollY;
     };
-    if (docOl && heads.length >= 2) {
-      heads.forEach(function (h) {
-        var li = document.createElement("li");
-        var a = document.createElement("a");
-        a.href = "#" + h.id;
-        a.textContent = (h.textContent || "").trim();
-        a.className = "toc-" + h.tagName.toLowerCase();
-        li.appendChild(a);
-        docOl.appendChild(li);
-        docLinks.push({ a: a, el: h });
-        if (mobileOl) {
-          var li2 = li.cloneNode(true);
-          mobileOl.appendChild(li2);
-          docLinks.push({ a: li2.querySelector("a"), el: h });
-        }
-      });
-      docToc.classList.add("ready");
-      if (mobile) mobile.classList.add("has-items");
-
+    var heads = [];
+    var seen = {};
+    docLinks.forEach(function (a) {
+      var id = decodeURIComponent((a.getAttribute("href") || "").slice(1));
+      if (!id || seen[id]) return;
+      var el = document.getElementById(id);
+      if (el) { seen[id] = true; heads.push(el); }
+    });
+    if (heads.length) {
       var docTick = false;
       var syncDoc = function () {
         docTick = false;
@@ -98,17 +78,16 @@
           if (absTop(heads[i]) <= y) idx = i;
         }
         var activeId = heads[idx] ? heads[idx].id : "";
-        docLinks.forEach(function (item) {
-          if (item.el.id === activeId) item.a.classList.add("active");
-          else item.a.classList.remove("active");
+        docLinks.forEach(function (a) {
+          var id = decodeURIComponent((a.getAttribute("href") || "").slice(1));
+          if (id === activeId) a.classList.add("active");
+          else a.classList.remove("active");
         });
       };
       window.addEventListener("scroll", function () {
         if (!docTick) { docTick = true; requestAnimationFrame(syncDoc); }
       }, { passive: true });
       syncDoc();
-    } else {
-      docToc.hidden = true;
     }
   }
 
